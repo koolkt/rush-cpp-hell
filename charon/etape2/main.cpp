@@ -1,18 +1,14 @@
 #include <string>
 #include <iostream>
 #include "Function.hpp"
+#include <boost/bind.hpp>
 
-class Name
+class Test
 {
 public:
-  Name(){}
- 
-  char  operator()(char c1)
-  {
-    return c1;
-  }
- 
-  virtual ~Name(){}
+  Test(){}
+  ~Test(){} 
+  char	operator()(char c1) { return c1; }
 };
 
 int funct1(char c)
@@ -25,7 +21,7 @@ int main()
 {
   Function<int (char)> f = &funct1;
   Function<int (char)> b = boost::bind(&funct1, _1);
-  Name n;
+  Test n;
   Function<char (char)> c = n;
  
   f('f');
