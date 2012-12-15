@@ -40,7 +40,7 @@ class Function<T(P1)>
   template <typename PTR, typename A1>
   class FuncTypeTemplated<PTR(A1)> : public IFuncType
   {
-    ptr         _o;
+    ptr		_o;
  
   public:
     FuncTypeTemplated() : _o(0) {}
