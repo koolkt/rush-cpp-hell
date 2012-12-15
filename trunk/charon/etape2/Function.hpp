@@ -1,101 +1,84 @@
-#include <boost/bind.hpp>
-
 template <typename T>
 class Function;
 
 template <typename T, typename P1>
 class Function<T(P1)>
 {
-  typedef Function<T(P1)>& retour;
+  typedef Function<T(P1)>& ret;
   typedef T (*ptr)(P1);
  
-   class Holder
-   {
-   public:
-     virtual T  operator()(P1 const&) = 0;
-     virtual ~Holder(){};
-   };
- 
-  template <typename C>
-  class PlaceHolder : public Holder
+  // interface
+  class IFuncType
   {
-    C           *_b;
+  public:
+    virtual T  operator()(P1 const&) = 0;
+    virtual ~IFuncType(){};
+  };
+  
+  // class templété
+  template <typename C>
+  class FuncTypeTemplated : public IFuncType
+  {
+    C*	_funcPtr;
  
   public:
-    PlaceHolder() : _b(0)
-    {}
-    PlaceHolder(C const& p) : _b(new C(p))
-    {}
-    PlaceHolder(PlaceHolder<C> const& f) : _b(f._b)
-    {}
-    PlaceHolder(PlaceHolder<T(P1)> const& f) : _b(f._b)
-    {}
+    FuncTypeTemplated() : _funcPtr(0) {}
+    FuncTypeTemplated(C const& p) : _funcPtr(new C(p)) {}
+    FuncTypeTemplated(FuncTypeTemplated<C> const& f) : _funcPtr(f._funcPtr) {}
+    FuncTypeTemplated(FuncTypeTemplated<T(P1)> const& f) : _funcPtr(f._funcPtr) {}
+    virtual ~FuncTypeTemplated() { delete _funcPtr; }
  
     T                   operator()(P1 const& p)
     {
-      if (_b)
-	return _b->operator()(p);
+      if (_funcPtr)
+	return _funcPtr->operator()(p);
       return T(p);
     }
-    virtual ~PlaceHolder()
-    {delete _b;}
   };
- 
+
+  // class templété spécialisé
   template <typename PTR, typename A1>
-  class PlaceHolder<PTR(A1)> : public Holder
+  class FuncTypeTemplated<PTR(A1)> : public IFuncType
   {
     ptr         _o;
  
   public:
-    PlaceHolder() : _o(0)
-    {}
- 
-    PlaceHolder(ptr p) : _o(p)
-    {}
- 
-    PlaceHolder(PlaceHolder<T(P1)> const& f) : _o(f._o)
-    {}
-    
-    T                   operator()(P1 const& p)
-    { return _o(p); }
-    virtual ~PlaceHolder() {}
+    FuncTypeTemplated() : _o(0) {}
+    FuncTypeTemplated(ptr p) : _o(p) {}
+    FuncTypeTemplated(FuncTypeTemplated<T(P1)> const& f) : _o(f._o) {}
+    T	operator()(P1 const& p) { return _o(p); }
+    virtual ~FuncTypeTemplated() {}
   };
  
+  // membre
+  IFuncType*      _funcPtr;
+
 public:
-  Function() : _hold(0)
-  {}
- 
+  Function() : _funcPtr(0) {}
   template <typename C>
-  Function(C const& p) : _hold(new PlaceHolder<C>(p))
-  {}
- 
-  Function(ptr p) : _hold(new PlaceHolder<T(P1)>(p))
-  { }
- 
-  Function(Function<T(P1)> const& f) : _hold(f._hold)
-  {
-  }
+  Function(C const& p) : _funcPtr(new FuncTypeTemplated<C>(p)) {}
+  Function(ptr p) : _funcPtr(new FuncTypeTemplated<T(P1)>(p)) {}
+  Function(Function<T(P1)> const& f) : _funcPtr(f._funcPtr){}
  
   T                     operator()(P1 const& p)
   {
-    if (_hold)
-      return _hold->operator()(p);
+    if (_funcPtr)
+      return _funcPtr->operator()(p);
     return T();
   }
-  retour                operator=(ptr p)
+
+  ret	operator=(ptr p)
   {
-    delete _hold;
-    _hold = new PlaceHolder<T(P1)>(p);
+    delete _funcPtr;
+    _funcPtr = new FuncTypeTemplated<T(P1)>(p);
     return *this;
   }
  
   template <typename B>
-  retour                operator=(B const&b)
+  ret	operator=(B const&b)
   {
-    delete _hold;
-    _hold = new PlaceHolder<B>(b);
+    delete _funcPtr;
+    _funcPtr = new FuncTypeTemplated<B>(b);
     return *this;
   }
-private:
-  Holder *      _hold;
 };
